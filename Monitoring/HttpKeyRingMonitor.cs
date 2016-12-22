@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using CodersBand.Bitcoin.Balances;
 using CodersBand.Bitcoin.Histories;
@@ -14,6 +15,51 @@ using QBitNinja.Client.Models;
 
 namespace CodersBand.Bitcoin.Monitoring
 {
+    internal class PeriodicUpdate
+    {
+        private readonly CancellationTokenSource _updateTimeOutSource;
+        private volatile bool _isMoniotorEnabled;
+        private CancellationToken _cancellationToken;
+        private readonly Action _cycleAction;
+
+        public TimeSpan PeriodTimeSpan { set; get; }
+
+        public PeriodicUpdate(Action cycleAction)
+        {
+            _cycleAction = cycleAction;
+
+            PeriodTimeSpan = TimeSpan.FromSeconds(5);
+
+            _updateTimeOutSource = new CancellationTokenSource();
+            _cancellationToken = _updateTimeOutSource.Token;
+        }
+
+        public async void StartAsync()
+        {
+            if (!_isMoniotorEnabled)
+            {
+                _cancellationToken = _updateTimeOutSource.Token;
+                _isMoniotorEnabled = true;
+
+                while (_isMoniotorEnabled)
+                {
+                    try
+                    {
+                        await Task.Delay(PeriodTimeSpan, _cancellationToken);
+                    }
+                    catch (TaskCanceledException) { }
+                    _cycleAction();
+                }
+            } 
+        }
+
+        public void Stop()
+        {
+            _isMoniotorEnabled = false;
+            _updateTimeOutSource.Cancel();
+        }
+    }
+
     public class HttpKeyRingMonitor : HttpMonitor, INotifyPropertyChanged
     {
         private readonly WalletClient _qBitNinjaWalletClient;
@@ -26,12 +72,20 @@ namespace CodersBand.Bitcoin.Monitoring
         private int _syncProgressPercent;
         internal KeyRing BaseKeyRing;
 
+        private readonly PeriodicUpdate _periodicUpdate;
+
         public HttpKeyRingMonitor(KeyRing keyRing, int addressCount) : base(keyRing.Network)
         {
             AssertNetwork(keyRing.Network);
             AddressCount = addressCount;
             BaseKeyRing = keyRing;
             KeyRing = new HttpKeyRing(this);
+
+            _periodicUpdate = new PeriodicUpdate(() =>
+            {
+                if (_syncProgressPercent == 100)
+                    UpdateSafeHistoryAndBalanceInfo();
+            });
 
             _qBitNinjaWalletClient = Client.GetWalletClient(QBitNinjaWalletName);
             _qBitNinjaWalletClient.CreateIfNotExists().Wait();
@@ -151,15 +205,14 @@ namespace CodersBand.Bitcoin.Monitoring
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        // ReSharper disable once FunctionNeverReturns https://youtrack.jetbrains.com/issue/RSRP-425337
-        private async void PeriodicUpdate()
+        public void Start()
         {
-            while (true)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(1));
-                if (_syncProgressPercent == 100)
-                    UpdateSafeHistoryAndBalanceInfo();
-            }
+            _periodicUpdate.StartAsync();
+        }
+
+        public void Stop()
+        {
+            _periodicUpdate.Stop();
         }
 
         protected void OnPropertyChanged(PropertyChangedEventArgs e)
@@ -188,14 +241,14 @@ namespace CodersBand.Bitcoin.Monitoring
 
         internal async void StartInitializingQBitNinjaWallet()
         {
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
                 InitializationState = State.NotStarted;
                 InitializationProgressPercent = 0;
                 List<string> outOfSyncAddresses;
                 do
                 {
-                    outOfSyncAddresses = GetOutOfSyncAddresses();
+                    outOfSyncAddresses = await GetOutOfSyncAddressesAsync();
                     AdjustState(AddressCount - outOfSyncAddresses.Count);
 
                     if (outOfSyncAddresses.Count == 0) continue;
@@ -203,12 +256,12 @@ namespace CodersBand.Bitcoin.Monitoring
                     foreach (var address in outOfSyncAddresses)
                     {
                         AdjustState(outOfSyncAddresses.IndexOf(address));
-                        _qBitNinjaWalletClient.CreateAddressIfNotExists(new BitcoinPubKeyAddress(address));
+                        await _qBitNinjaWalletClient.CreateAddressIfNotExists(new BitcoinPubKeyAddress(address));
                     }
                 } while (outOfSyncAddresses.Count != 0);
             });
 
-            PeriodicUpdate();
+            _periodicUpdate.StartAsync();
         }
 
         private void AdjustState(int syncedAddressCount)
@@ -228,9 +281,10 @@ namespace CodersBand.Bitcoin.Monitoring
             else InitializationProgressPercent = _syncProgressPercent;
         }
 
-        private List<string> GetOutOfSyncAddresses()
+        private async Task<List<string>> GetOutOfSyncAddressesAsync()
         {
-            var qbitAddresses = _qBitNinjaWalletClient.GetAddresses().Result.Select(x => x.Address.ToWif()).ToList();
+            var qbitResult = await _qBitNinjaWalletClient.GetAddresses();
+            var qbitAddresses = qbitResult.Select(x => x.Address.ToWif()).ToList();
             var safeAddresses = new HashSet<string>();
             for (var i = 0; i < AddressCount; i++)
             {
@@ -258,7 +312,7 @@ namespace CodersBand.Bitcoin.Monitoring
         {
             AssertSynced();
 
-            var balance = await _qBitNinjaWalletClient.GetBalance().ConfigureAwait(false);            
+            var balance = await _qBitNinjaWalletClient.GetBalance();            
             var balanceOperations = balance.Operations;
 
             // Find all the operations concerned to one address
