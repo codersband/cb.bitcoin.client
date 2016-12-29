@@ -60,6 +60,11 @@ namespace CodersBand.Bitcoin.Monitoring
         }
     }
 
+    public class BalanceUpdateEventArgs: EventArgs
+    {
+        public List<AddressHistoryRecord> HistoryRecords { set; get; }
+    }
+
     public class HttpKeyRingMonitor : HttpMonitor, INotifyPropertyChanged
     {
         private readonly WalletClient _qBitNinjaWalletClient;
@@ -67,7 +72,7 @@ namespace CodersBand.Bitcoin.Monitoring
         private int _initializationProgressPercent;
         private State _initializationState;
         private KeyRingBalanceInfo _safeBalanceInfo;
-        private KeyRingHistory _safeHistory;
+        private KeyRingHistory _keyRingHistory;
 
         private int _syncProgressPercent;
         internal KeyRing BaseKeyRing;
@@ -84,7 +89,7 @@ namespace CodersBand.Bitcoin.Monitoring
             _periodicUpdate = new PeriodicUpdate(() =>
             {
                 if (_syncProgressPercent == 100)
-                    UpdateSafeHistoryAndBalanceInfo();
+                    UpdateKeyRingHistoryAndBalanceInfo();
             });
 
             _qBitNinjaWalletClient = Client.GetWalletClient(QBitNinjaWalletName);
@@ -97,33 +102,52 @@ namespace CodersBand.Bitcoin.Monitoring
         {
             get
             {
-                if (_safeHistory == null)
-                    UpdateSafeHistoryAndBalanceInfo();
-                return _safeHistory;
+                if (_keyRingHistory == null)
+                    UpdateKeyRingHistoryAndBalanceInfo();
+                return _keyRingHistory;
             }
             private set
             {
                 var changeHappened = false;
-                if (_safeHistory != null)
+                var historyRecords = new List<AddressHistoryRecord>();
+                if (_keyRingHistory != null)
                 {
-                    if (_safeHistory.Records.Count != value.Records.Count)
-                        changeHappened = true;
-                    else
+                    if (_keyRingHistory.Records.Count != value.Records.Count)
                     {
-                        for (var i = 0; i < _safeHistory.Records.Count; i++)
+                        historyRecords.AddRange(value.Records.Where(r=>!_keyRingHistory.Records.Contains(r)));
+                        changeHappened = true;
+                    }
+                    else
+                    {                      
+                        for (var i = 0; i < _keyRingHistory.Records.Count; i++)
                         {
-                            if (_safeHistory.Records[i].Confirmed != value.Records[i].Confirmed)
+                            if (_keyRingHistory.Records[i].Confirmed != value.Records[i].Confirmed)
+                            {
+                                AddOrUpdateHistoryRecords(value.Records[i], ref historyRecords);
                                 changeHappened = true;
-                            if (_safeHistory.Records[i].TransactionId != value.Records[i].TransactionId)
+                            }
+                            if (_keyRingHistory.Records[i].TransactionId != value.Records[i].TransactionId)
+                            {
+                                AddOrUpdateHistoryRecords(value.Records[i], ref historyRecords);
                                 changeHappened = true; // Malleability check
+                            }
                         }
                     }
                 }
 
-                _safeHistory = value;
+                _keyRingHistory = value;
                 AdjustState(AddressCount);
-                if (changeHappened) OnBalanceChanged();
+                if (changeHappened) OnBalanceChanged(historyRecords);
             }
+        }
+
+        private static void AddOrUpdateHistoryRecords(AddressHistoryRecord record, ref List<AddressHistoryRecord> historyRecords)
+        {
+            var foundIndex = historyRecords.IndexOf(record);
+            if (foundIndex < 0)
+                historyRecords.Add(record);
+            else
+                historyRecords[foundIndex] = record;
         }
 
         public State InitializationState
@@ -192,7 +216,7 @@ namespace CodersBand.Bitcoin.Monitoring
             get
             {
                 if (_safeBalanceInfo == null)
-                    UpdateSafeHistoryAndBalanceInfo();
+                    UpdateKeyRingHistoryAndBalanceInfo();
                 return _safeBalanceInfo;
             }
             set
@@ -205,12 +229,12 @@ namespace CodersBand.Bitcoin.Monitoring
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public void Start()
+        public void ResumeMonitoring()
         {
             _periodicUpdate.StartAsync();
         }
 
-        public void Stop()
+        public void StopMonitoring()
         {
             _periodicUpdate.Stop();
         }
@@ -273,7 +297,7 @@ namespace CodersBand.Bitcoin.Monitoring
             _syncProgressPercent = (int) Math.Round((double) (100*syncedAddressCount)/AddressCount);
             if (_syncProgressPercent == 100)
             {
-                if (_safeHistory == null || _safeBalanceInfo == null)
+                if (_keyRingHistory == null || _safeBalanceInfo == null)
                     InitializationProgressPercent = 99;
                 else
                     InitializationProgressPercent = 100;
@@ -303,12 +327,12 @@ namespace CodersBand.Bitcoin.Monitoring
         {
             AssertSynced();
 
-            UpdateSafeHistoryAndBalanceInfo();
+            UpdateKeyRingHistoryAndBalanceInfo();
 
             return KeyRingBalanceInfo;
         }
 
-        private async void UpdateSafeHistoryAndBalanceInfo()
+        private async void UpdateKeyRingHistoryAndBalanceInfo()
         {
             AssertSynced();
 
@@ -326,7 +350,7 @@ namespace CodersBand.Bitcoin.Monitoring
                 foreach (var coin in operation.ReceivedCoins)
                 {
                     string address;
-                    if (!SafeContainsCoin(out address, coin)) continue;
+                    if (!KeyRingContainsCoin(out address, coin)) continue;
 
                     var amount = ((Money) coin.Amount).ToDecimal(MoneyUnit.BTC);
 
@@ -340,7 +364,7 @@ namespace CodersBand.Bitcoin.Monitoring
                 foreach (var coin in operation.SpentCoins)
                 {
                     string address;
-                    if (!SafeContainsCoin(out address, coin)) continue;
+                    if (!KeyRingContainsCoin(out address, coin)) continue;
 
                     var amount = ((Money) coin.Amount).ToDecimal(MoneyUnit.BTC);
                     spentAddressAmountPairs.Add(operation.Confirmations == 0
@@ -391,12 +415,12 @@ namespace CodersBand.Bitcoin.Monitoring
         {
             AssertSynced();
 
-            UpdateSafeHistoryAndBalanceInfo();
+            UpdateKeyRingHistoryAndBalanceInfo();
 
             return KeyRingHistory;
         }
 
-        private bool SafeContainsCoin(out string address, ICoin coin)
+        private bool KeyRingContainsCoin(out string address, ICoin coin)
         {
             try
             {
@@ -417,9 +441,9 @@ namespace CodersBand.Bitcoin.Monitoring
                 throw new Exception("HttpKeyRingMonitor is not synced with QBitNinja wallet.");
         }
 
-        protected virtual void OnBalanceChanged()
+        protected virtual void OnBalanceChanged(List<AddressHistoryRecord> historyRecords)
         {
-            BalanceChanged?.Invoke(this, EventArgs.Empty);
+            BalanceChanged?.Invoke(this, new BalanceUpdateEventArgs{HistoryRecords = historyRecords});
         }
     }
 }

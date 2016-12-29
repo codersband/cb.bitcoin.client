@@ -5,7 +5,7 @@ using QBitNinja.Client.Models;
 
 namespace CodersBand.Bitcoin.Histories
 {
-    public class AddressHistoryRecord
+    public class AddressHistoryRecord : IEquatable<AddressHistoryRecord>
     {
         private readonly BalanceOperation _operation;
 
@@ -36,6 +36,13 @@ namespace CodersBand.Bitcoin.Histories
 
         public DateTimeOffset DateTime => _operation.FirstSeen;
         public bool Confirmed => _operation.Confirmations > 0;
+        public int Confirmations => _operation.Confirmations;
         public string TransactionId => _operation.TransactionId.ToString();
+
+        public bool Equals(AddressHistoryRecord other)
+        {
+            return this.TransactionId == other.TransactionId
+                && this.Address == other.Address;
+        }
     }
 }

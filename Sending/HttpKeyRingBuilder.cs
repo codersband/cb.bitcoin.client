@@ -4,26 +4,26 @@ using CodersBand.Bitcoin.KeyManagement;
 
 namespace CodersBand.Bitcoin.Sending
 {
-    public class HttpSafeBuilder : HttpBuilder
+    public class HttpKeyRingBuilder : HttpBuilder
     {
-        public HttpSafeBuilder(HttpKeyRing safe) : base(safe.Network)
+        public HttpKeyRingBuilder(HttpKeyRing keyRing) : base(keyRing.Network)
         {
-            AssertNetwork(safe.Network);
-            Safe = safe;
+            AssertNetwork(keyRing.Network);
+            KeyRing = keyRing;
         }
 
-        public HttpKeyRing Safe { get; }
+        public HttpKeyRing KeyRing { get; }
 
         public TransactionInfo BuildTransaction(List<AddressAmountPair> to, FeeType feeType = FeeType.Fastest,
             string message = "")
         {
-            var notEmptyPrivateKeys = Safe.NotEmptyAddresses.Select(Safe.GetPrivateKey).ToList();
+            var notEmptyPrivateKeys = KeyRing.NotEmptyAddresses.Select(KeyRing.GetPrivateKey).ToList();
 
             return BuildTransaction(
                 notEmptyPrivateKeys,
                 to,
                 feeType,
-                Safe.UnusedAddresses.First(),
+                KeyRing.UnusedAddresses.First(),
                 message
                 );
         }
@@ -31,7 +31,7 @@ namespace CodersBand.Bitcoin.Sending
         public TransactionInfo BuildSpendAllTransaction(string toAddress, FeeType feeType = FeeType.Fastest,
             string message = "")
         {
-            var notEmptyPrivateKeys = Safe.NotEmptyAddresses.Select(Safe.GetPrivateKey).ToList();
+            var notEmptyPrivateKeys = KeyRing.NotEmptyAddresses.Select(KeyRing.GetPrivateKey).ToList();
 
             return BuildSpendAllTransaction(
                 notEmptyPrivateKeys,

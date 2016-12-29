@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
+using System.Threading.Tasks;
 using CodersBand.Bitcoin.Monitoring;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -13,7 +13,7 @@ namespace CodersBand.Bitcoin.Sending
     {
         internal static List<Transaction> BuiltTransactions = new List<Transaction>();
 
-        public static void Send(ConnectionType connectionType, TransactionInfo transactionInfo, int tryTimes = 1)
+        public static async Task SendAsync(ConnectionType connectionType, TransactionInfo transactionInfo, int tryTimes = 1)
         {
             var monitor = new HttpMonitor(transactionInfo.Network);
 
@@ -38,9 +38,8 @@ namespace CodersBand.Bitcoin.Sending
                 group.Connect();
 
                 while (group.ConnectedNodes.Count == 0)
-                {
-                    Thread.Sleep(100);
-                }
+                    await Task.Delay(100).ConfigureAwait(false);
+
                 var transaction = FindTransaction(transactionInfo);
                 var payload = new TxPayload(transaction);
                 group.ConnectedNodes.First().SendMessage(payload);
@@ -55,14 +54,15 @@ namespace CodersBand.Bitcoin.Sending
                 catch (NullReferenceException exception)
                 {
                     if (exception.Message != "Transaction does not exists") throw;
-                    Thread.Sleep(1000);
+                    await Task.Delay(1000).ConfigureAwait(false);
                     continue;
                 }
                 if (i == 10)
                 {
                     if (tryTimes == 1)
                         throw new Exception("Transaction has not been broadcasted, try again!");
-                    Send(connectionType, transactionInfo, tryTimes - 1);
+                    await SendAsync(connectionType, transactionInfo, tryTimes - 1)
+                        .ConfigureAwait(false);
                 }
                 break;
             }
