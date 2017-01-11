@@ -3,13 +3,11 @@ using System.IO;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
 
-namespace CodersBand.Bitcoin.KeyManagement
+namespace CB.Bitcoin.Client.KeyManagement
 {
     [DataContract]
     internal class KeyRingStore
     {
-        private static FileStream fileStream;
-
         [IgnoreDataMember]
         private static readonly object Lock = new object();
         [DataMember]

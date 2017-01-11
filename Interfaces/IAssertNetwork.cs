@@ -1,4 +1,4 @@
-﻿namespace CodersBand.Bitcoin.Interfaces
+﻿namespace CB.Bitcoin.Client.Interfaces
 {
     internal interface IAssertNetwork
     {

@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using CodersBand.Bitcoin.KeyManagement;
+using CB.Bitcoin.Client.KeyManagement;
 
-namespace CodersBand.Bitcoin.Histories
+namespace CB.Bitcoin.Client.Histories
 {
     public class KeyRingHistory : History
     {

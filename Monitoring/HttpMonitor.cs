@@ -1,9 +1,9 @@
-﻿using CodersBand.Bitcoin.Balances;
-using CodersBand.Bitcoin.Histories;
+﻿using CB.Bitcoin.Client.Balances;
+using CB.Bitcoin.Client.Histories;
 using NBitcoin;
 using QBitNinja.Client;
 
-namespace CodersBand.Bitcoin.Monitoring
+namespace CB.Bitcoin.Client.Monitoring
 {
     public class HttpMonitor : Monitor
     {

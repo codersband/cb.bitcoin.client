@@ -1,9 +1,9 @@
 ﻿using System;
-using CodersBand.Bitcoin.Balances;
-using CodersBand.Bitcoin.Histories;
-using CodersBand.Bitcoin.Interfaces;
+using CB.Bitcoin.Client.Balances;
+using CB.Bitcoin.Client.Histories;
+using CB.Bitcoin.Client.Interfaces;
 
-namespace CodersBand.Bitcoin.Monitoring
+namespace CB.Bitcoin.Client.Monitoring
 {
     public abstract class Monitor : IAssertNetwork
     {

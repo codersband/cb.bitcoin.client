@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Newtonsoft.Json.Linq;
 
-namespace CodersBand.Bitcoin
+namespace CB.Bitcoin.Client
 {
     public enum FeeType
     {

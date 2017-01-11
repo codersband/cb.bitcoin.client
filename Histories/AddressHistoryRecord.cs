@@ -3,7 +3,7 @@ using System.Linq;
 using NBitcoin;
 using QBitNinja.Client.Models;
 
-namespace CodersBand.Bitcoin.Histories
+namespace CB.Bitcoin.Client.Histories
 {
     public class AddressHistoryRecord : IEquatable<AddressHistoryRecord>
     {

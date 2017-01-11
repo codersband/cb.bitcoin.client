@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace CodersBand.Bitcoin.Histories
+namespace CB.Bitcoin.Client.Histories
 {
     public abstract class History
     {

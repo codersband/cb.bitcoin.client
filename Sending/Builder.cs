@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using CodersBand.Bitcoin.Interfaces;
+using CB.Bitcoin.Client.Interfaces;
 
-namespace CodersBand.Bitcoin.Sending
+namespace CB.Bitcoin.Client.Sending
 {
     public abstract class Builder : IAssertNetwork
     {

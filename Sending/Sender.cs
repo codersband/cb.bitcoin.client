@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CodersBand.Bitcoin.Monitoring;
+using CB.Bitcoin.Client.Monitoring;
 using NBitcoin;
 using NBitcoin.Protocol;
 using QBitNinja.Client;
 
-namespace CodersBand.Bitcoin.Sending
+namespace CB.Bitcoin.Client.Sending
 {
     public static class Sender
     {
@@ -49,7 +49,10 @@ namespace CodersBand.Bitcoin.Sending
             {
                 try
                 {
-                    monitor.GetTransactionInfo(transactionInfo.Id);
+                    var result = monitor.GetTransactionInfo(transactionInfo.Id);
+
+                    Console.WriteLine(result);
+
                 }
                 catch (NullReferenceException exception)
                 {

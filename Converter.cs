@@ -1,7 +1,7 @@
 ﻿using System;
 using NBitcoin;
 
-namespace CodersBand.Bitcoin
+namespace CB.Bitcoin.Client
 {
     internal static class Converter
     {

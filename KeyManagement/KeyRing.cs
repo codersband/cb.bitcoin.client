@@ -2,7 +2,7 @@
 using NBitcoin;
 using NBitcoin.Stealth;
 
-namespace CodersBand.Bitcoin.KeyManagement
+namespace CB.Bitcoin.Client.KeyManagement
 {
     public class KeyRing
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace CodersBand.Bitcoin.KeyManagement
+namespace CB.Bitcoin.Client.KeyManagement
 {
     public class LimitedKeyRing : KeyRing
     {

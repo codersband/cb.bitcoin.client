@@ -1,4 +1,4 @@
-﻿namespace CodersBand.Bitcoin
+﻿namespace CB.Bitcoin.Client
 {
     public struct AddressAmountPair
     {

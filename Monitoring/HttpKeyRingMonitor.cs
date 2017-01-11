@@ -5,15 +5,15 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using CodersBand.Bitcoin.Balances;
-using CodersBand.Bitcoin.Histories;
-using CodersBand.Bitcoin.KeyManagement;
-using CodersBand.Bitcoin.States;
+using CB.Bitcoin.Client.Balances;
+using CB.Bitcoin.Client.Histories;
+using CB.Bitcoin.Client.KeyManagement;
+using CB.Bitcoin.Client.States;
 using NBitcoin;
 using QBitNinja.Client;
 using QBitNinja.Client.Models;
 
-namespace CodersBand.Bitcoin.Monitoring
+namespace CB.Bitcoin.Client.Monitoring
 {
     internal class PeriodicUpdate
     {

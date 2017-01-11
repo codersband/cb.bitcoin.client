@@ -4,11 +4,11 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using CodersBand.Bitcoin.States;
+using CB.Bitcoin.Client.States;
 using NBitcoin;
 using QBitNinja.Client;
 
-namespace CodersBand.Bitcoin.Sending
+namespace CB.Bitcoin.Client.Sending
 {
     public class HttpBuilder : Builder, INotifyPropertyChanged
     {

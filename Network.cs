@@ -1,5 +1,5 @@
 ﻿
-namespace CodersBand.Bitcoin
+namespace CB.Bitcoin.Client
 {
     public enum Network
     {

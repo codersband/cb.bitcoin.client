@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using CodersBand.Bitcoin.Monitoring;
+using CB.Bitcoin.Client.Monitoring;
 
-namespace CodersBand.Bitcoin.KeyManagement
+namespace CB.Bitcoin.Client.KeyManagement
 {
     public class HttpKeyRing : LimitedKeyRing
     {

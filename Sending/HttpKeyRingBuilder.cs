@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using CodersBand.Bitcoin.KeyManagement;
+using CB.Bitcoin.Client.KeyManagement;
 
-namespace CodersBand.Bitcoin.Sending
+namespace CB.Bitcoin.Client.Sending
 {
     public class HttpKeyRingBuilder : HttpBuilder
     {

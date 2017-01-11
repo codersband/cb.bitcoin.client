@@ -4,7 +4,7 @@ using System.Linq;
 using NBitcoin;
 using QBitNinja.Client.Models;
 
-namespace CodersBand.Bitcoin
+namespace CB.Bitcoin.Client
 {
     public class TransactionInfo
     {

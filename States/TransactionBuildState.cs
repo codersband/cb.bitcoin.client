@@ -1,4 +1,4 @@
-﻿namespace CodersBand.Bitcoin.States
+﻿namespace CB.Bitcoin.Client.States
 {
     public enum TransactionBuildState
     {

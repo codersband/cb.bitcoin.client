@@ -1,4 +1,4 @@
-﻿namespace CodersBand.Bitcoin.Balances
+﻿namespace CB.Bitcoin.Client.Balances
 {
     public class AddressBalanceInfo : BalanceInfo
     {
